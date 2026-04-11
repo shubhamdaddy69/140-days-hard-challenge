@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mock Test App</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f4f6f9; color: #222; }
+
+  /* ── HOME ── */
+  #home-page { padding: 24px; }
+  .home-header { text-align: center; padding: 32px 0 24px; }
+  .home-header h1 { font-size: 28px; font-weight: 700; color: #1a1a2e; }
+  .home-header p { color: #666; margin-top: 6px; }
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; max-width: 1200px; margin: 0 auto; }
+  .topic-card {
+    background: #fff; border-radius: 12px; padding: 20px 14px; text-align: center;
+    cursor: pointer; border: 1.5px solid #e0e4ef; transition: all 0.18s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .topic-card:hover { border-color: #4f6ef7; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(79,110,247,0.15); }
+  .topic-card .icon { font-size: 26px; margin-bottom: 8px; }
+  .topic-card h3 { font-size: 13px; font-weight: 600; color: #1a1a2e; margin-bottom: 4px; line-height: 1.3; }
+  .topic-card .meta { font-size: 11px; color: #888; }
+  .topic-card .sets-badge { display: inline-block; margin-top: 8px; background: #eef1ff; color: #4f6ef7; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 20px; }
+
+  /* ── SETS PAGE ── */
+  #sets-page { padding: 24px; display: none; }
+  .back-btn { background: none; border: 1.5px solid #ccc; padding: 7px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #444; margin-bottom: 20px; }
+  .back-btn:hover { border-color: #4f6ef7; color: #4f6ef7; }
+  .sets-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; color: #1a1a2e; }
+  .sets-sub { color: #777; font-size: 14px; margin-bottom: 20px; }
+  .sets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; max-width: 900px; }
+  .set-card {
+    background: #fff; border: 1.5px solid #e0e4ef; border-radius: 12px; padding: 20px;
+    cursor: pointer; transition: all 0.18s; text-align: center;
+  }
+  .set-card:hover { border-color: #4f6ef7; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(79,110,247,0.15); }
+  .set-card h4 { font-size: 15px; font-weight: 600; color: #1a1a2e; }
+  .set-card p { font-size: 12px; color: #888; margin-top: 4px; }
+  .set-card .timer-info { margin-top: 10px; font-size: 12px; color: #4f6ef7; font-weight: 600; }
+
+  /* ── MOCK PAGE ── */
+  #mock-page { display: none; min-height: 100vh; flex-direction: column; }
+  .mock-header {
+    background: #1a1a2e; color: #fff; padding: 12px 20px;
+    display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  .mock-header .mock-title { font-size: 15px; font-weight: 600; }
+  .mock-header .stats { display: flex; gap: 16px; align-items: center; font-size: 13px; }
+  .stat-pill { background: rgba(255,255,255,0.12); padding: 4px 12px; border-radius: 20px; }
+  .stat-pill span { font-weight: 700; }
+  .timer-pill { background: #e74c3c; padding: 5px 14px; border-radius: 20px; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+  .timer-pill.warn { background: #e67e22; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+
+  .mock-body { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 56px); }
+
+  /* Nav panel */
+  .nav-panel { width: 200px; background: #fff; border-right: 1px solid #e0e4ef; overflow-y: auto; padding: 12px; flex-shrink: 0; }
+  .nav-panel h4 { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .nav-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .nav-btn {
+    aspect-ratio: 1; border-radius: 6px; border: 1.5px solid #e0e4ef;
+    background: #fff; font-size: 11px; font-weight: 600; cursor: pointer; color: #444;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .nav-btn.current { border-color: #4f6ef7; background: #eef1ff; color: #4f6ef7; }
+  .nav-btn.answered { background: #27ae60; border-color: #27ae60; color: #fff; }
+  .nav-btn.skipped { background: #e74c3c; border-color: #e74c3c; color: #fff; }
+  .nav-legend { margin-top: 12px; font-size: 11px; color: #888; }
+  .legend-item { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+
+  /* Question area */
+  .question-area { flex: 1; overflow-y: auto; padding: 24px; }
+  .q-number { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; margin-bottom: 8px; }
+  .q-text { font-size: 17px; font-weight: 500; line-height: 1.6; color: #1a1a2e; margin-bottom: 24px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn {
+    display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px;
+    border: 1.5px solid #e0e4ef; border-radius: 10px; background: #fff;
+    cursor: pointer; text-align: left; transition: all 0.15s; font-size: 15px;
+  }
+  .option-btn:hover { border-color: #4f6ef7; background: #f7f9ff; }
+  .option-btn.selected { border-color: #4f6ef7; background: #eef1ff; }
+  .option-label { font-weight: 700; color: #4f6ef7; min-width: 20px; font-size: 14px; }
+  .option-text { color: #333; line-height: 1.5; }
+
+  /* Action bar */
+  .action-bar { background: #fff; border-top: 1px solid #e0e4ef; padding: 12px 20px; display: flex; gap: 10px; justify-content: space-between; }
+  .action-bar .left-btns, .action-bar .right-btns { display: flex; gap: 10px; }
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; }
+  .btn-outline { background: #fff; border-color: #ccc; color: #444; }
+  .btn-outline:hover { border-color: #4f6ef7; color: #4f6ef7; }
+  .btn-primary { background: #4f6ef7; color: #fff; border-color: #4f6ef7; }
+  .btn-primary:hover { background: #3a58e0; }
+  .btn-success { background: #27ae60; color: #fff; border-color: #27ae60; }
+  .btn-success:hover { background: #219a54; }
+  .btn-danger { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+  .btn-danger:hover { background: #c0392b; }
+
+  /* ── REVIEW PAGE ── */
+  #review-page { display: none; padding: 24px; max-width: 860px; margin: 0 auto; }
+  .review-header { text-align: center; padding: 20px 0 10px; }
+  .review-header h2 { font-size: 24px; font-weight: 700; color: #1a1a2e; }
+  .score-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 20px 0; }
+  .score-box { background: #fff; border-radius: 12px; padding: 18px; text-align: center; border: 1.5px solid #e0e4ef; }
+  .score-box .count { font-size: 32px; font-weight: 700; }
+  .score-box .label { font-size: 13px; color: #888; margin-top: 4px; }
+  .score-box.correct .count { color: #27ae60; }
+  .score-box.wrong .count { color: #e74c3c; }
+  .score-box.skipped .count { color: #f39c12; }
+  .review-actions { display: flex; gap: 12px; justify-content: center; margin: 16px 0; flex-wrap: wrap; }
+  .review-section-title { font-size: 16px; font-weight: 700; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 2px solid; }
+  .review-section-title.wrong { color: #e74c3c; border-color: #e74c3c; }
+  .review-section-title.skipped { color: #f39c12; border-color: #f39c12; }
+  .review-section-title.correct { color: #27ae60; border-color: #27ae60; }
+  .review-card { background: #fff; border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; border: 1.5px solid #e0e4ef; }
+  .review-card .rq-num { font-size: 12px; font-weight: 700; color: #888; margin-bottom: 6px; }
+  .review-card .rq-text { font-size: 15px; font-weight: 500; margin-bottom: 12px; color: #1a1a2e; line-height: 1.5; }
+  .review-option { padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 14px; display: flex; align-items: flex-start; gap: 10px; }
+  .review-option.correct-ans { background: #eafaf1; border: 1px solid #27ae60; }
+  .review-option.user-wrong { background: #fdecea; border: 1px solid #e74c3c; }
+  .review-option.normal { background: #f8f9fa; border: 1px solid #e0e4ef; }
+  .ans-tag { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
+  .ans-tag.c { background: #d5f5e3; color: #1e8449; }
+  .ans-tag.w { background: #fde8e7; color: #c0392b; }
+
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; display: none; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 14px; padding: 28px; max-width: 400px; width: 90%; text-align: center; }
+  .modal h3 { font-size: 20px; font-weight: 700; margin-bottom: 10px; color: #1a1a2e; }
+  .modal p { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+  .modal-btns { display: flex; gap: 10px; justify-content: center; }
+
+  @media (max-width: 600px) {
+    .nav-panel { width: 130px; }
+    .nav-grid { grid-template-columns: repeat(4, 1fr); }
+    .mock-header .stats { gap: 8px; }
+    .score-summary { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     📚 PASTE YOUR QUESTIONS HERE
+     Format for each topic:
+     topicN: { name: "Topic Name", icon: "📖", questions: [ ... ] }
+     
+     Each question format:
+     {
+       q: "Question text?",
+       options: ["Option A", "Option B", "Option C", "Option D"],
+       answer: 0   ← index (0=A, 1=B, 2=C, 3=D)
+     }
+═══════════════════════════════════════════════════ -->
+
+<script>
+// ════════════════════════════════════════════════════
+//  ✏️  PASTE YOUR QUESTIONS INSIDE EACH TOPIC BELOW
+//  You can add as many questions as you want per topic.
+//  Sets of 50 will be auto-generated.
+// ════════════════════════════════════════════════════
+
+const TOPICS = [
+  {
+    name: "General Knowledge",
+    icon: "🌍",
+    questions: [
+      // PASTE TOPIC 1 QUESTIONS HERE
+      // Example format (delete these examples and paste yours):
+      { q: "What is the capital of France?", options: ["Berlin", "Madrid", "Paris", "Rome"], answer: 2 },
+      { q: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], answer: 1 },
+      { q: "Who painted the Mona Lisa?", options: ["Van Gogh", "Picasso", "Da Vinci", "Rembrandt"], answer: 2 },
+    ]
+  },
+  {
+    name: "Science & Technology",
+    icon: "🔬",
+    questions: [
+      // PASTE TOPIC 2 QUESTIONS HERE
+      { q: "What is the chemical symbol for water?", options: ["WO", "H2O", "HO2", "OW"], answer: 1 },
+    ]
+  },
+  {
+    name: "Mathematics",
+    icon: "📐",
+    questions: [
+      // PASTE TOPIC 3 QUESTIONS HERE
+      { q: "What is 15 × 15?", options: ["200", "215", "225", "235"], answer: 2 },
+    ]
+  },
+  {
+    name: "History",
+    icon: "🏛️",
+    questions: [
+      // PASTE TOPIC 4 QUESTIONS HERE
+      { q: "In which year did World War II end?", options: ["1943", "1944", "1945", "1946"], answer: 2 },
+    ]
+  },
+  {
+    name: "Geography",
+    icon: "🗺️",
+    questions: [
+      // PASTE TOPIC 5 QUESTIONS HERE
+      { q: "Which is the largest ocean?", options: ["Atlantic", "Indian", "Arctic", "Pacific"], answer: 3 },
+    ]
+  },
+  {
+    name: "English Language",
+    icon: "📝",
+    questions: [
+      // PASTE TOPIC 6 QUESTIONS HERE
+      { q: "What is a synonym for 'happy'?", options: ["Sad", "Joyful", "Angry", "Tired"], answer: 1 },
+    ]
+  },
+  {
+    name: "Physics",
+    icon: "⚛️",
+    questions: [
+      // PASTE TOPIC 7 QUESTIONS HERE
+      { q: "What is the unit of force?", options: ["Watt", "Joule", "Newton", "Pascal"], answer: 2 },
+    ]
+  },
+  {
+    name: "Chemistry",
+    icon: "🧪",
+    questions: [
+      // PASTE TOPIC 8 QUESTIONS HERE
+      { q: "What is the atomic number of Carbon?", options: ["4", "6", "8", "12"], answer: 1 },
+    ]
+  },
+  {
+    name: "Biology",
+    icon: "🧬",
+    questions: [
+      // PASTE TOPIC 9 QUESTIONS HERE
+      { q: "What is the powerhouse of the cell?", options: ["Nucleus", "Ribosome", "Mitochondria", "Golgi"], answer: 2 },
+    ]
+  },
+  {
+    name: "Economics",
+    icon: "💹",
+    questions: [
+      // PASTE TOPIC 10 QUESTIONS HERE
+      { q: "What does GDP stand for?", options: ["Gross Domestic Product", "General Domestic Price", "Grand Development Plan", "Global Data Point"], answer: 0 },
+    ]
+  },
+  { name: "Polity", icon: "⚖️", questions: [{ q: "Sample question for Topic 11?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Current Affairs", icon: "📰", questions: [{ q: "Sample question for Topic 12?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Computer Science", icon: "💻", questions: [{ q: "Sample question for Topic 13?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Environment", icon: "🌱", questions: [{ q: "Sample question for Topic 14?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Sports", icon: "⚽", questions: [{ q: "Sample question for Topic 15?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Art & Culture", icon: "🎨", questions: [{ q: "Sample question for Topic 16?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Literature", icon: "📚", questions: [{ q: "Sample question for Topic 17?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Indian History", icon: "🇮🇳", questions: [{ q: "Sample question for Topic 18?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "World Geography", icon: "🌐", questions: [{ q: "Sample question for Topic 19?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Indian Economy", icon: "🏦", questions: [{ q: "Sample question for Topic 20?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Philosophy", icon: "🤔", questions: [{ q: "Sample question for Topic 21?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Psychology", icon: "🧠", questions: [{ q: "Sample question for Topic 22?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Sociology", icon: "👥", questions: [{ q: "Sample question for Topic 23?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Political Science", icon: "🏛", questions: [{ q: "Sample question for Topic 24?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Agriculture", icon: "🌾", questions: [{ q: "Sample question for Topic 25?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Space Science", icon: "🚀", questions: [{ q: "Sample question for Topic 26?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Medical Science", icon: "🏥", questions: [{ q: "Sample question for Topic 27?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Law & Justice", icon: "⚖", questions: [{ q: "Sample question for Topic 28?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Banking & Finance", icon: "🏧", questions: [{ q: "Sample question for Topic 29?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Defence & Military", icon: "🎖️", questions: [{ q: "Sample question for Topic 30?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Disaster Management", icon: "🆘", questions: [{ q: "Sample question for Topic 31?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Ethics & Integrity", icon: "🤝", questions: [{ q: "Sample question for Topic 32?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Indian Polity", icon: "📜", questions: [{ q: "Sample question for Topic 33?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "International Relations", icon: "🌏", questions: [{ q: "Sample question for Topic 34?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Science in Daily Life", icon: "🔦", questions: [{ q: "Sample question for Topic 35?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Ancient History", icon: "🏺", questions: [{ q: "Sample question for Topic 36?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Medieval History", icon: "🏰", questions: [{ q: "Sample question for Topic 37?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Modern History", icon: "📖", questions: [{ q: "Sample question for Topic 38?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Indian Culture", icon: "🎭", questions: [{ q: "Sample question for Topic 39?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Reasoning", icon: "🧩", questions: [{ q: "Sample question for Topic 40?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Data Interpretation", icon: "📊", questions: [{ q: "Sample question for Topic 41?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Quantitative Aptitude", icon: "🔢", questions: [{ q: "Sample question for Topic 42?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Verbal Ability", icon: "🗣️", questions: [{ q: "Sample question for Topic 43?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Static GK", icon: "📌", questions: [{ q: "Sample question for Topic 44?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Technology & AI", icon: "🤖", questions: [{ q: "Sample question for Topic 45?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Climate Change", icon: "🌡️", questions: [{ q: "Sample question for Topic 46?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Health & Nutrition", icon: "🥗", questions: [{ q: "Sample question for Topic 47?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Infrastructure", icon: "🏗️", questions: [{ q: "Sample question for Topic 48?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Governance", icon: "🏢", questions: [{ q: "Sample question for Topic 49?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Social Issues", icon: "🤲", questions: [{ q: "Sample question for Topic 50?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Women & Child", icon: "👩‍👧", questions: [{ q: "Sample question for Topic 51?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Tribal Affairs", icon: "🏕️", questions: [{ q: "Sample question for Topic 52?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Urban Development", icon: "🏙️", questions: [{ q: "Sample question for Topic 53?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Rural Development", icon: "🏡", questions: [{ q: "Sample question for Topic 54?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Education Policy", icon: "🎓", questions: [{ q: "Sample question for Topic 55?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Schemes & Policies", icon: "📋", questions: [{ q: "Sample question for Topic 56?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Awards & Honours", icon: "🏆", questions: [{ q: "Sample question for Topic 57?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Books & Authors", icon: "📓", questions: [{ q: "Sample question for Topic 58?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Famous Personalities", icon: "🌟", questions: [{ q: "Sample question for Topic 59?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Inventions", icon: "💡", questions: [{ q: "Sample question for Topic 60?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "First in India", icon: "🥇", questions: [{ q: "Sample question for Topic 61?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "First in World", icon: "🌎", questions: [{ q: "Sample question for Topic 62?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Organisations", icon: "🏤", questions: [{ q: "Sample question for Topic 63?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Summit & Conferences", icon: "🤝", questions: [{ q: "Sample question for Topic 64?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Reports & Index", icon: "📈", questions: [{ q: "Sample question for Topic 65?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Days & Events", icon: "📅", questions: [{ q: "Sample question for Topic 66?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Constitution", icon: "🗽", questions: [{ q: "Sample question for Topic 67?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Fundamental Rights", icon: "✊", questions: [{ q: "Sample question for Topic 68?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Parliament", icon: "🏛️", questions: [{ q: "Sample question for Topic 69?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Judiciary", icon: "⚖️", questions: [{ q: "Sample question for Topic 70?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Local Governance", icon: "🏘️", questions: [{ q: "Sample question for Topic 71?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Election System", icon: "🗳️", questions: [{ q: "Sample question for Topic 72?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Public Administration", icon: "🏦", questions: [{ q: "Sample question for Topic 73?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "RTI & Transparency", icon: "🔍", questions: [{ q: "Sample question for Topic 74?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Fiscal Policy", icon: "💰", questions: [{ q: "Sample question for Topic 75?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Monetary Policy", icon: "🏛", questions: [{ q: "Sample question for Topic 76?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Trade & Commerce", icon: "🚢", questions: [{ q: "Sample question for Topic 77?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Industry & Manufacturing", icon: "🏭", questions: [{ q: "Sample question for Topic 78?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Energy Resources", icon: "⚡", questions: [{ q: "Sample question for Topic 79?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Renewable Energy", icon: "☀️", questions: [{ q: "Sample question for Topic 80?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Water Resources", icon: "💧", questions: [{ q: "Sample question for Topic 81?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Minerals & Mining", icon: "⛏️", questions: [{ q: "Sample question for Topic 82?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Forests & Wildlife", icon: "🐾", questions: [{ q: "Sample question for Topic 83?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Biodiversity", icon: "🦋", questions: [{ q: "Sample question for Topic 84?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Oceanography", icon: "🌊", questions: [{ q: "Sample question for Topic 85?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Meteorology", icon: "🌦️", questions: [{ q: "Sample question for Topic 86?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Indian Railways", icon: "🚂", questions: [{ q: "Sample question for Topic 87?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Sports Awards", icon: "🎽", questions: [{ q: "Sample question for Topic 88?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Olympics", icon: "🏅", questions: [{ q: "Sample question for Topic 89?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Cricket", icon: "🏏", questions: [{ q: "Sample question for Topic 90?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Missiles & Defence Tech", icon: "🚀", questions: [{ q: "Sample question for Topic 91?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "ISRO & NASA", icon: "🛸", questions: [{ q: "Sample question for Topic 92?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Cyber Security", icon: "🔒", questions: [{ q: "Sample question for Topic 93?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Biotechnology", icon: "🧫", questions: [{ q: "Sample question for Topic 94?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Nanotechnology", icon: "🔬", questions: [{ q: "Sample question for Topic 95?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Robotics & Automation", icon: "🦾", questions: [{ q: "Sample question for Topic 96?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "5G & Telecom", icon: "📡", questions: [{ q: "Sample question for Topic 97?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Fintech", icon: "📲", questions: [{ q: "Sample question for Topic 98?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Startups & Innovation", icon: "💼", questions: [{ q: "Sample question for Topic 99?", options: ["A", "B", "C", "D"], answer: 0 }] },
+  { name: "Mixed Practice", icon: "🎯", questions: [{ q: "Sample question for Topic 100?", options: ["A", "B", "C", "D"], answer: 0 }] },
+];
+
+// ════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════
+const QUESTIONS_PER_SET = 50;
+const TIMER_SECONDS = 20 * 60; // 20 minutes
+const LABELS = ['A','B','C','D'];
+
+// ════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════
+let currentTopicIndex = -1;
+let currentSetIndex = -1;
+let currentSetQuestions = [];
+let currentQuestion = 0;
+let userAnswers = [];        // null = unanswered, -1 = skipped, 0-3 = selected
+let timerInterval = null;
+let secondsLeft = TIMER_SECONDS;
+
+// ════════════════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════════════════
+function getSets(topic) {
+  const q = topic.questions;
+  const sets = [];
+  for (let i = 0; i < q.length; i += QUESTIONS_PER_SET)
+    sets.push(q.slice(i, i + QUESTIONS_PER_SET));
+  return sets;
+}
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60).toString().padStart(2, '0');
+  const sec = (s % 60).toString().padStart(2, '0');
+  return `${m}:${sec}`;
+}
+
+function show(id) {
+  ['home-page','sets-page','mock-page','review-page'].forEach(p => {
+    const el = document.getElementById(p);
+    if (el) el.style.display = p === id ? (p === 'mock-page' ? 'flex' : 'block') : 'none';
+  });
+}
+
+// ════════════════════════════════════════════════════
+//  HOME PAGE
+// ════════════════════════════════════════════════════
+function renderHome() {
+  show('home-page');
+  const grid = document.getElementById('cards-grid');
+  grid.innerHTML = '';
+  TOPICS.forEach((t, i) => {
+    const sets = getSets(t);
+    const div = document.createElement('div');
+    div.className = 'topic-card';
+    div.innerHTML = `
+      <div class="icon">${t.icon}</div>
+      <h3>${t.name}</h3>
+      <div class="meta">${t.questions.length} Questions</div>
+      <div class="sets-badge">${sets.length} Set${sets.length !== 1 ? 's' : ''}</div>
+    `;
+    div.onclick = () => renderSets(i);
+    grid.appendChild(div);
+  });
+}
+
+// ════════════════════════════════════════════════════
+//  SETS PAGE
+// ════════════════════════════════════════════════════
+function renderSets(topicIdx) {
+  currentTopicIndex = topicIdx;
+  const topic = TOPICS[topicIdx];
+  const sets = getSets(topic);
+  show('sets-page');
+  document.getElementById('sets-title').textContent = topic.name;
+  document.getElementById('sets-sub').textContent = `${topic.questions.length} questions · ${sets.length} mock set${sets.length !== 1 ? 's' : ''} of ${QUESTIONS_PER_SET} each`;
+  const grid = document.getElementById('sets-grid');
+  grid.innerHTML = '';
+  sets.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'set-card';
+    div.innerHTML = `
+      <h4>Mock Set ${i + 1}</h4>
+      <p>${s.length} Questions</p>
+      <div class="timer-info">⏱ 20 Minutes</div>
+    `;
+    div.onclick = () => startMock(topicIdx, i);
+    grid.appendChild(div);
+  });
+}
+
+// ════════════════════════════════════════════════════
+//  MOCK PAGE
+// ════════════════════════════════════════════════════
+function startMock(topicIdx, setIdx) {
+  currentTopicIndex = topicIdx;
+  currentSetIndex = setIdx;
+  const sets = getSets(TOPICS[topicIdx]);
+  currentSetQuestions = sets[setIdx];
+  userAnswers = new Array(currentSetQuestions.length).fill(null);
+  currentQuestion = 0;
+  secondsLeft = TIMER_SECONDS;
+  show('mock-page');
+  renderMockHeader();
+  renderNavPanel();
+  renderQuestion();
+  startTimer();
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    updateTimerDisplay();
+    if (secondsLeft <= 0) {
+      clearInterval(timerInterval);
+      autoSubmit();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('timer-display');
+  if (!el) return;
+  el.textContent = fmtTime(secondsLeft);
+  el.className = 'timer-pill' + (secondsLeft <= 120 ? ' warn' : '');
+}
+
+function renderMockHeader() {
+  const t = TOPICS[currentTopicIndex];
+  document.getElementById('mock-title').textContent = `${t.name} — Set ${currentSetIndex + 1}`;
+  updateStats();
+}
+
+function updateStats() {
+  const answered = userAnswers.filter(a => a !== null && a !== -1).length;
+  const left = userAnswers.filter(a => a === null).length;
+  document.getElementById('stat-attempted').textContent = answered;
+  document.getElementById('stat-left').textContent = left;
+}
+
+function renderNavPanel() {
+  const container = document.getElementById('nav-grid');
+  container.innerHTML = '';
+  currentSetQuestions.forEach((_, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-btn' + (i === currentQuestion ? ' current' : '');
+    if (userAnswers[i] !== null && userAnswers[i] !== -1) btn.classList.add('answered');
+    else if (userAnswers[i] === -1) btn.classList.add('skipped');
+    btn.textContent = i + 1;
+    btn.onclick = () => { currentQuestion = i; renderQuestion(); renderNavPanel(); };
+    container.appendChild(btn);
+  });
+}
+
+function renderQuestion() {
+  const q = currentSetQuestions[currentQuestion];
+  document.getElementById('q-number').textContent = `Question ${currentQuestion + 1} of ${currentSetQuestions.length}`;
+  document.getElementById('q-text').textContent = q.q;
+  const optContainer = document.getElementById('options-container');
+  optContainer.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn' + (userAnswers[currentQuestion] === i ? ' selected' : '');
+    btn.innerHTML = `<span class="option-label">${LABELS[i]}</span><span class="option-text">${opt}</span>`;
+    btn.onclick = () => selectAnswer(i);
+    optContainer.appendChild(btn);
+  });
+  // update prev/next buttons
+  document.getElementById('btn-prev').disabled = currentQuestion === 0;
+}
+
+function selectAnswer(idx) {
+  userAnswers[currentQuestion] = idx;
+  renderQuestion();
+  renderNavPanel();
+  updateStats();
+}
+
+function goNext() {
+  if (currentQuestion < currentSetQuestions.length - 1) {
+    currentQuestion++;
+    renderQuestion();
+    renderNavPanel();
+  }
+}
+
+function goPrev() {
+  if (currentQuestion > 0) {
+    currentQuestion--;
+    renderQuestion();
+    renderNavPanel();
+  }
+}
+
+function saveAnswer() {
+  // Answer is already saved on click; just show brief feedback
+  const btn = document.getElementById('btn-save');
+  btn.textContent = 'Saved ✓';
+  setTimeout(() => btn.textContent = 'Save', 1000);
+}
+
+function confirmSubmit() {
+  const unanswered = userAnswers.filter(a => a === null).length;
+  document.getElementById('submit-modal-body').textContent =
+    unanswered > 0
+      ? `You have ${unanswered} unanswered question(s). Unanswered questions will be marked as skipped. Are you sure you want to submit?`
+      : `All questions answered. Are you sure you want to submit?`;
+  document.getElementById('submit-modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('submit-modal').classList.remove('show');
+}
+
+function autoSubmit() {
+  userAnswers = userAnswers.map(a => a === null ? -1 : a);
+  submitMock();
+}
+
+function submitMock() {
+  clearInterval(timerInterval);
+  closeModal();
+  // Mark all null as skipped
+  userAnswers = userAnswers.map(a => a === null ? -1 : a);
+  renderReview();
+}
+
+// ════════════════════════════════════════════════════
+//  REVIEW PAGE
+// ════════════════════════════════════════════════════
+function renderReview() {
+  show('review-page');
+  const q = currentSetQuestions;
+  const correct = [], wrong = [], skipped = [];
+  q.forEach((question, i) => {
+    const ua = userAnswers[i];
+    if (ua === -1) skipped.push(i);
+    else if (ua === question.answer) correct.push(i);
+    else wrong.push(i);
+  });
+
+  document.getElementById('score-correct').textContent = correct.length;
+  document.getElementById('score-wrong').textContent = wrong.length;
+  document.getElementById('score-skipped').textContent = skipped.length;
+
+  const t = TOPICS[currentTopicIndex];
+  document.getElementById('review-title').textContent = `${t.name} — Set ${currentSetIndex + 1} Results`;
+
+  const body = document.getElementById('review-body');
+  body.innerHTML = '';
+
+  function renderSection(title, cls, indices) {
+    if (!indices.length) return;
+    const h = document.createElement('div');
+    h.className = `review-section-title ${cls}`;
+    h.textContent = `${title} (${indices.length})`;
+    body.appendChild(h);
+    indices.forEach(i => {
+      const card = document.createElement('div');
+      card.className = 'review-card';
+      const ua = userAnswers[i];
+      const correctIdx = q[i].answer;
+      let optionsHtml = '';
+      q[i].options.forEach((opt, oi) => {
+        let cls2 = 'normal';
+        let tag = '';
+        if (oi === correctIdx) { cls2 = 'correct-ans'; tag = '<span class="ans-tag c">Correct</span>'; }
+        else if (oi === ua && ua !== correctIdx) { cls2 = 'user-wrong'; tag = '<span class="ans-tag w">Your answer</span>'; }
+        optionsHtml += `<div class="review-option ${cls2}"><span class="option-label">${LABELS[oi]}</span><span style="flex:1">${opt}</span>${tag}</div>`;
+      });
+      card.innerHTML = `
+        <div class="rq-num">Q${i + 1}</div>
+        <div class="rq-text">${q[i].q}</div>
+        ${optionsHtml}
+      `;
+      body.appendChild(card);
+    });
+  }
+
+  renderSection('Wrong Answers', 'wrong', wrong);
+  renderSection('Skipped Questions', 'skipped', skipped);
+  renderSection('Correct Answers', 'correct', correct);
+}
+
+function downloadAnswerKey() {
+  const t = TOPICS[currentTopicIndex];
+  const q = currentSetQuestions;
+  let txt = `ANSWER KEY — ${t.name} | Set ${currentSetIndex + 1}\n`;
+  txt += `Generated: ${new Date().toLocaleString()}\n`;
+  txt += '='.repeat(60) + '\n\n';
+  q.forEach((question, i) => {
+    const ua = userAnswers[i];
+    const correct = question.answer;
+    const status = ua === -1 ? 'SKIPPED' : ua === correct ? 'CORRECT' : 'WRONG';
+    txt += `Q${i + 1}. ${question.q}\n`;
+    question.options.forEach((opt, oi) => {
+      const mark = oi === correct ? '✓ ' : oi === ua && ua !== correct ? '✗ ' : '  ';
+      txt += `   ${mark}${LABELS[oi]}. ${opt}\n`;
+    });
+    txt += `   Correct Answer: ${LABELS[correct]}\n`;
+    txt += `   Your Answer: ${ua === -1 ? 'Not attempted' : LABELS[ua]}\n`;
+    txt += `   Result: ${status}\n\n`;
+  });
+
+  const blob = new Blob([txt], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `AnswerKey_${t.name.replace(/\s+/g,'_')}_Set${currentSetIndex + 1}.txt`;
+  a.click();
+}
+
+function goHome() {
+  clearInterval(timerInterval);
+  renderHome();
+}
+
+// ════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => renderHome());
+</script>
+
+<!-- ═══════════════════════════════════════════════════ HOME PAGE -->
+<div id="home-page">
+  <div class="home-header">
+    <h1>📚 Mock Test Series</h1>
+    <p>Choose a topic to start practicing · 50 questions per mock set · 20 min timer</p>
+  </div>
+  <div class="cards-grid" id="cards-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ SETS PAGE -->
+<div id="sets-page" style="display:none">
+  <button class="back-btn" onclick="goHome()">← Back to Topics</button>
+  <div class="sets-title" id="sets-title"></div>
+  <div class="sets-sub" id="sets-sub"></div>
+  <div class="sets-grid" id="sets-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ MOCK PAGE -->
+<div id="mock-page" style="display:none; flex-direction:column; min-height:100vh;">
+  <div class="mock-header">
+    <div class="mock-title" id="mock-title">Mock Test</div>
+    <div class="stats">
+      <div class="stat-pill">✅ Attempted: <span id="stat-attempted">0</span></div>
+      <div class="stat-pill">⬜ Left: <span id="stat-left">0</span></div>
+      <div class="timer-pill" id="timer-display">20:00</div>
+    </div>
+  </div>
+
+  <div class="mock-body">
+    <!-- Navigation Panel -->
+    <div class="nav-panel">
+      <h4>Questions</h4>
+      <div class="nav-grid" id="nav-grid"></div>
+      <div class="nav-legend" style="margin-top:14px">
+        <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div> Answered</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div> Skipped</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#eef1ff;border:1.5px solid #4f6ef7"></div> Current</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#fff;border:1px solid #ccc"></div> Not visited</div>
+      </div>
+    </div>
+
+    <!-- Question Area -->
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+      <div class="question-area" style="flex:1; overflow-y:auto;">
+        <div class="q-number" id="q-number"></div>
+        <div class="q-text" id="q-text"></div>
+        <div class="options" id="options-container"></div>
+      </div>
+
+      <!-- Action Bar -->
+      <div class="action-bar">
+        <div class="left-btns">
+          <button class="btn btn-outline" id="btn-prev" onclick="goPrev()">← Previous</button>
+          <button class="btn btn-outline" onclick="goNext()">Next →</button>
+        </div>
+        <div class="right-btns">
+          <button class="btn btn-primary" id="btn-save" onclick="saveAnswer()">Save</button>
+          <button class="btn btn-danger" onclick="confirmSubmit()">Submit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ REVIEW PAGE -->
+<div id="review-page" style="display:none;">
+  <div class="review-header">
+    <h2 id="review-title">Results</h2>
+  </div>
+  <div class="score-summary">
+    <div class="score-box correct">
+      <div class="count" id="score-correct">0</div>
+      <div class="label">Correct</div>
+    </div>
+    <div class="score-box wrong">
+      <div class="count" id="score-wrong">0</div>
+      <div class="label">Wrong</div>
+    </div>
+    <div class="score-box skipped">
+      <div class="count" id="score-skipped">0</div>
+      <div class="label">Skipped</div>
+    </div>
+  </div>
+  <div class="review-actions">
+    <button class="btn btn-outline" onclick="goHome()">🏠 Back to Home</button>
+    <button class="btn btn-success" onclick="downloadAnswerKey()">⬇ Download Answer Key</button>
+  </div>
+  <div id="review-body"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ SUBMIT MODAL -->
+<div class="modal-overlay" id="submit-modal">
+  <div class="modal">
+    <h3>Submit Mock Test?</h3>
+    <p id="submit-modal-body"></p>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="submitMock()">Yes, Submit</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
