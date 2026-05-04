@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>140 Days Hard Challenge — Mock Test Series</title>
+<title>500 Mocks Hard Challenge — Mock Test Series</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
@@ -252,21 +252,15 @@
   <header>
     <div class="logo-line">
       <span class="line"></span>
-      <h1>140 Days Hard Challenge with Shubham</h1>
+    <h1>500 Mocks Hard Challenge with Shubham</h1>
       <span class="line right"></span>
     </div>
-    <div class="subtitle">Mock Test Series &mdash; CGL &bull; CHSL &bull; CPO &bull; STENO</div>
-    <a class="tg-link" href="https://t.me/+CLtmPRto-PVjZDQ1" target="_blank">
-      ▶ https://t.me/+CLtmPRto-PVjZDQ1
-    </a>
   </header>
 
 
 
   <!-- =================== MOCKS PAGE =================== -->
   <div id="page-mocks">
-
-<div class="section-label">— Select Your Mock —</div>
 
     <!-- MOCK GRID (flat, no phases) -->
     <div class="mock-grid" id="mockGrid"></div>
@@ -284,12 +278,12 @@
 // ============================================================
 // CONFIG: Mocks 1-140 active
 // ============================================================
-const MOCKS_CONFIG = Array.from({length: 140}, (_, i) => {
+const MOCKS_CONFIG = Array.from({length: 500}, (_, i) => {
   const id = i + 1;
   return {
     id,
-    active: id <= 140,
-    file: id <= 140 ? `${id}.html` : null
+    active: true,
+    file: `${id}.html`
   };
 });
 
